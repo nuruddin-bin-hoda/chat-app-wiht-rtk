@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 html-template
+
+server/db.json
