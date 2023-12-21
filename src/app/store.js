@@ -11,6 +11,7 @@ const store = configureStore({
     conversations: conversationsReducer,
     messages: messagesReducer,
   },
+  // eslint-disable-next-line no-undef
   devTools: process.env.NODE_ENV !== "production",
   middleware: (gDM) => gDM().concat(apiSlice.middleware),
 });
