@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Conversation from "./pages/Conversation";
 import Inbox from "./pages/Inbox";
+import useAuthCheck from "./hooks/useAuthCheck";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -21,7 +22,10 @@ const router = createBrowserRouter(
 );
 
 function App() {
-  return <RouterProvider router={router} />;
+  const authChecked = useAuthCheck();
+
+  if (authChecked) return <RouterProvider router={router} />;
+  else return <h1>Checking authorization...</h1>;
 }
 
 export default App;
