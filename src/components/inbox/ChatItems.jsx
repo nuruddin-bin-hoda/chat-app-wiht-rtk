@@ -1,28 +1,51 @@
+import { useSelector } from "react-redux";
+import { useGetConversationsQuery } from "../../features/conversations/conversationsApi";
 import ChatItem from "./ChatItem";
+import Error from "../ui/Error";
+import moment from "moment";
+import getPartnerInfo from "../../utils/getPratnerInfo";
+import gravatarUrl from "gravatar-url";
 
 export default function ChatItems() {
-  return (
-    <ul>
+  const { user } = useSelector((state) => state.auth) || {};
+  const { email } = user || {};
+  const {
+    data: conversations,
+    isLoading,
+    isError,
+    isSuccess,
+  } = useGetConversationsQuery(email);
+
+  // decite what to render
+  let content = null;
+
+  if (isLoading)
+    content = (
       <li>
-        <ChatItem
-          avatar="https://cdn.pixabay.com/photo/2018/09/12/12/14/man-3672010__340.jpg"
-          name="Saad Hasan"
-          lastMessage="bye"
-          lastTime="25 minutes"
-        />
-        <ChatItem
-          avatar="https://cdn.pixabay.com/photo/2018/09/12/12/14/man-3672010__340.jpg"
-          name="Sumit Saha"
-          lastMessage="will talk to you later"
-          lastTime="10 minutes"
-        />
-        <ChatItem
-          avatar="https://cdn.pixabay.com/photo/2018/09/12/12/14/man-3672010__340.jpg"
-          name="Mehedi Hasan"
-          lastMessage="thanks for your support"
-          lastTime="15 minutes"
-        />
+        <h3>Loading...</h3>
       </li>
-    </ul>
-  );
+    );
+
+  if (isError) content = <Error message="Can't get conversations!" />;
+
+  if (isSuccess)
+    content = conversations.map((conversation) => {
+      const { id, users, message, timestamp } = conversation;
+      const { name, email: partnerEmail } = getPartnerInfo(users, email);
+      const avatarUrl = gravatarUrl(partnerEmail);
+
+      return (
+        <li key={id}>
+          <ChatItem
+            id={id}
+            avatar={avatarUrl}
+            name={name}
+            lastMessage={message}
+            lastTime={moment(timestamp).fromNow()}
+          />
+        </li>
+      );
+    });
+
+  return <ul>{content}</ul>;
 }
