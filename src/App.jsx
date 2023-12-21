@@ -9,14 +9,44 @@ import Register from "./pages/Register";
 import Conversation from "./pages/Conversation";
 import Inbox from "./pages/Inbox";
 import useAuthCheck from "./hooks/useAuthCheck";
+import PrivateRoute from "./components/PrivateRoute";
+import PublicRoute from "./components/PublicRoute";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      <Route path="/" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/inbox" element={<Conversation />} />
-      <Route path="/inbox/:id" element={<Inbox />} />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/inbox"
+        element={
+          <PrivateRoute>
+            <Conversation />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/inbox/:id"
+        element={
+          <PrivateRoute>
+            <Inbox />
+          </PrivateRoute>
+        }
+      />
     </>
   )
 );

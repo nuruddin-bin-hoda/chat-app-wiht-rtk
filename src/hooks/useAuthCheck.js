@@ -11,16 +11,16 @@ export default function useAuthCheck() {
     const auth = JSON.parse(localAuth);
 
     if (auth?.accessToken && auth?.user) {
-      // set accessToken & uset to redux store
+      // set accessToken & user to redux store
       dispatch(
         userLoggedIn({
           accessToken: auth.accessToken,
           user: auth.user,
         })
       );
-
-      setAuthChecked(true);
     }
+
+    setAuthChecked(true);
   }, [dispatch]);
 
   return authChecked;
