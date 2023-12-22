@@ -3,7 +3,11 @@ import isValidEmail from "../../utils/isValidEmail";
 import Error from "../ui/Error";
 import { useGetUserQuery } from "../../features/users/usersApi";
 import { useSelector } from "react-redux";
-import { useGetConversationQuery } from "../../features/conversations/conversationsApi";
+import {
+  useAddConversationMutation,
+  useEditConversationMutation,
+  useGetConversationQuery,
+} from "../../features/conversations/conversationsApi";
 
 /* eslint-disable react/prop-types */
 export default function Modal({ open, control }) {
@@ -13,6 +17,17 @@ export default function Modal({ open, control }) {
   const { user: loggedInUser } = useSelector((state) => state.auth) || {};
   const { email: loggedInUserEmail } = loggedInUser || {};
   const [conversatinCheck, setConversationCheck] = useState(false);
+
+  const [editConversation, { isSuccess: isAddConversationSuccess }] =
+    useEditConversationMutation();
+  const [addConversation, { isSuccess: isEditConversationSuccess }] =
+    useAddConversationMutation();
+
+  // listen add/edit conversation success
+  useEffect(() => {
+    if (isAddConversationSuccess || isEditConversationSuccess) control();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAddConversationSuccess, isEditConversationSuccess]);
 
   const { data: participent } = useGetUserQuery(to, {
     skip: !userCheck,
@@ -58,7 +73,25 @@ export default function Modal({ open, control }) {
   const handleSendMessage = (e) => {
     e.preventDefault();
 
-    console.log("subit");
+    if (conversation?.length > 0) {
+      editConversation({
+        id: conversation[0].id,
+        data: {
+          participants: `${loggedInUserEmail}-${participent[0].email}`,
+          users: [loggedInUser, participent[0]],
+          message,
+          timestamp: new Date().getTime(),
+        },
+      });
+    } else if (conversation?.length === 0) {
+      console.log("add");
+      addConversation({
+        participants: `${loggedInUserEmail}-${participent[0].email}`,
+        users: [loggedInUser, participent[0]],
+        message,
+        timestamp: new Date().getTime(),
+      });
+    }
   };
 
   return (
