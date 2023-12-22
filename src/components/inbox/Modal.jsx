@@ -1,15 +1,23 @@
 import { useState } from "react";
 import isValidEmail from "../../utils/isValidEmail";
+import Error from "../ui/Error";
+import { useGetUserQuery } from "../../features/users/usersApi";
 
 /* eslint-disable react/prop-types */
 export default function Modal({ open, control }) {
   const [to, setTo] = useState("");
   const [message, setMessage] = useState("");
+  const [userCheck, setUserCheck] = useState(false);
+
+  const { data: participent } = useGetUserQuery(to, {
+    skip: !userCheck,
+  });
 
   // handle debounce search
   const doSearch = (value) => {
     if (isValidEmail) {
       setTo(value);
+      setUserCheck(true);
     }
   };
 
@@ -80,7 +88,9 @@ export default function Modal({ open, control }) {
               </button>
             </div>
 
-            {/* <Error message="There was an error" /> */}
+            {participent?.length === 0 && (
+              <Error message="This user dosn't exist!" />
+            )}
           </form>
         </div>
       </>
