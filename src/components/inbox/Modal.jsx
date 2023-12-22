@@ -1,17 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import isValidEmail from "../../utils/isValidEmail";
 import Error from "../ui/Error";
 import { useGetUserQuery } from "../../features/users/usersApi";
+import { useSelector } from "react-redux";
+import { useGetConversationQuery } from "../../features/conversations/conversationsApi";
 
 /* eslint-disable react/prop-types */
 export default function Modal({ open, control }) {
   const [to, setTo] = useState("");
   const [message, setMessage] = useState("");
   const [userCheck, setUserCheck] = useState(false);
+  const { user: loggedInUser } = useSelector((state) => state.auth) || {};
+  const { email: loggedInUserEmail } = loggedInUser || {};
+  const [conversatinCheck, setConversationCheck] = useState(false);
 
   const { data: participent } = useGetUserQuery(to, {
     skip: !userCheck,
   });
+
+  const { data: conversation } = useGetConversationQuery(
+    { userEmail: loggedInUserEmail, participantsEmail: to },
+    {
+      skip: !conversatinCheck,
+    }
+  );
+
+  // check conversation existancy
+  useEffect(() => {
+    if (participent?.length > 0 && participent[0].email !== loggedInUserEmail) {
+      setConversationCheck(true);
+    }
+  }, [participent, loggedInUserEmail]);
 
   // handle debounce search
   const doSearch = (value) => {
@@ -35,6 +54,13 @@ export default function Modal({ open, control }) {
 
   const handleSearch = debounceSearch(doSearch, 1000);
 
+  // handle submit
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+
+    console.log("subit");
+  };
+
   return (
     open && (
       <>
@@ -46,7 +72,7 @@ export default function Modal({ open, control }) {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Send message
           </h2>
-          <form className="mt-8 space-y-6">
+          <form onSubmit={handleSendMessage} className="mt-8 space-y-6">
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
                 <label htmlFor="to" className="sr-only">
@@ -81,6 +107,10 @@ export default function Modal({ open, control }) {
 
             <div>
               <button
+                disabled={
+                  participent?.length > 0 &&
+                  participent[0].email === loggedInUserEmail
+                }
                 type="submit"
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
               >
@@ -91,6 +121,11 @@ export default function Modal({ open, control }) {
             {participent?.length === 0 && (
               <Error message="This user dosn't exist!" />
             )}
+
+            {participent?.length > 0 &&
+              participent[0].email === loggedInUserEmail && (
+                <Error message="You can't send message to yourself" />
+              )}
           </form>
         </div>
       </>
