@@ -28,30 +28,46 @@ export const conversationsApi = apiSlice.injectEndpoints({
         { queryFulfilled, dispatch }
       ) {
         const { users, message, timestamp } = data;
-        const { data: resConversation } = await queryFulfilled;
 
-        // decide sender & receiver
-        const sender = users.find((u) => u.email === senderEmail);
-        const receiver = users.find((u) => u.email !== senderEmail);
+        try {
+          const { data: resConversation } = await queryFulfilled;
 
-        // add message
-        dispatch(
-          messagesApi.endpoints.addMessage.initiate({
-            conversationId: resConversation.id,
-            sender: {
-              id: sender.id,
-              name: sender.name,
-              email: sender.email,
-            },
-            receiver: {
-              id: receiver.id,
-              name: receiver.name,
-              email: receiver.email,
-            },
-            message,
-            timestamp,
-          })
-        );
+          // add conversation in cachs
+          dispatch(
+            apiSlice.util.updateQueryData(
+              "getConversations",
+              senderEmail,
+              (draft) => {
+                draft.push(resConversation);
+              }
+            )
+          );
+
+          // decide sender & receiver
+          const sender = users.find((u) => u.email === senderEmail);
+          const receiver = users.find((u) => u.email !== senderEmail);
+
+          // add message
+          dispatch(
+            messagesApi.endpoints.addMessage.initiate({
+              conversationId: resConversation.id,
+              sender: {
+                id: sender.id,
+                name: sender.name,
+                email: sender.email,
+              },
+              receiver: {
+                id: receiver.id,
+                name: receiver.name,
+                email: receiver.email,
+              },
+              message,
+              timestamp,
+            })
+          );
+        } catch (err) {
+          console.log(err);
+        }
       },
     }),
     editConversation: builder.mutation({

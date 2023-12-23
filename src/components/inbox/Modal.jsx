@@ -84,6 +84,8 @@ export default function Modal({ open, control }) {
           timestamp: new Date().getTime(),
         },
       });
+
+      setMessage("");
     } else if (conversation?.length === 0) {
       addConversation({
         sender: loggedInUserEmail,
@@ -94,6 +96,8 @@ export default function Modal({ open, control }) {
           timestamp: new Date().getTime(),
         },
       });
+
+      setMessage("");
     }
   };
 
