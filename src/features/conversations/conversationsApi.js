@@ -2,6 +2,7 @@ import { apiSlice } from "../api/apiSlice";
 import { messagesApi } from "../messages/messagesApi";
 
 export const conversationsApi = apiSlice.injectEndpoints({
+  tagTypes: ["Conversation", "User"],
   endpoints: (builder) => ({
     getConversations: builder.query({
       query: (email) =>
@@ -12,6 +13,7 @@ export const conversationsApi = apiSlice.injectEndpoints({
     getConversation: builder.query({
       query: ({ userEmail, participantsEmail }) =>
         `/conversations?participants_like=${userEmail}-${participantsEmail}&participants_like=${participantsEmail}-${userEmail}`,
+      providesTags: ["Conversation"],
     }),
     getConversationById: builder.query({
       query: (id) => `/conversations/${id}`,
@@ -22,6 +24,7 @@ export const conversationsApi = apiSlice.injectEndpoints({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["Conversation", "User"],
       // add message silently
       async onQueryStarted(
         { sender: senderEmail, data },

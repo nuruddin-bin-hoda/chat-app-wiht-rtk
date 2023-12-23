@@ -25,14 +25,18 @@ export default function Modal({ open, control }) {
 
   // listen add/edit conversation success
   useEffect(() => {
-    if (isAddConversationSuccess || isEditConversationSuccess) control();
+    if (isAddConversationSuccess || isEditConversationSuccess) {
+      control();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAddConversationSuccess, isEditConversationSuccess]);
 
+  // get participent
   const { data: participent } = useGetUserQuery(to, {
     skip: !userCheck,
   });
 
+  // check conversation existancy
   const { data: conversation } = useGetConversationQuery(
     { userEmail: loggedInUserEmail, participantsEmail: to },
     {
@@ -40,7 +44,6 @@ export default function Modal({ open, control }) {
     }
   );
 
-  // check conversation existancy
   useEffect(() => {
     if (participent?.length > 0 && participent[0].email !== loggedInUserEmail) {
       setConversationCheck(true);
