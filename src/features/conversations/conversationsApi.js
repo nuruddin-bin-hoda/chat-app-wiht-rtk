@@ -62,34 +62,53 @@ export const conversationsApi = apiSlice.injectEndpoints({
       }),
       // add message silently
       async onQueryStarted(
-        { sender: senderEmail, data },
+        { sender: senderEmail, id, data },
         { queryFulfilled, dispatch }
       ) {
-        const { users, message, timestamp } = data;
-        const { data: resConversation } = await queryFulfilled;
-
-        // decide sender & receiver
-        const sender = users.find((u) => u.email === senderEmail);
-        const receiver = users.find((u) => u.email !== senderEmail);
-
-        // add message
-        dispatch(
-          messagesApi.endpoints.addMessage.initiate({
-            conversationId: resConversation.id,
-            sender: {
-              id: sender.id,
-              name: sender.name,
-              email: sender.email,
-            },
-            receiver: {
-              id: receiver.id,
-              name: receiver.name,
-              email: receiver.email,
-            },
-            message,
-            timestamp,
-          })
+        //---- optimistic cache update
+        const patchResult1 = dispatch(
+          apiSlice.util.updateQueryData(
+            "getConversations",
+            senderEmail,
+            (draft) => {
+              const draftConversation = draft.find((c) => c.id == id);
+              draftConversation.message = data.message;
+              draftConversation.timestamp = data.timestamp;
+            }
+          )
         );
+
+        //---- edit conversation
+        const { users, message, timestamp } = data;
+
+        try {
+          const { data: resConversation } = await queryFulfilled;
+
+          // decide sender & receiver
+          const sender = users.find((u) => u.email === senderEmail);
+          const receiver = users.find((u) => u.email !== senderEmail);
+
+          // add message
+          dispatch(
+            messagesApi.endpoints.addMessage.initiate({
+              conversationId: resConversation.id,
+              sender: {
+                id: sender.id,
+                name: sender.name,
+                email: sender.email,
+              },
+              receiver: {
+                id: receiver.id,
+                name: receiver.name,
+                email: receiver.email,
+              },
+              message,
+              timestamp,
+            })
+          );
+        } catch (err) {
+          patchResult1.undo();
+        }
       },
     }),
   }),
