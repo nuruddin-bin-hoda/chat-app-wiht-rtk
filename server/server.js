@@ -11,18 +11,27 @@ global.io = io;
 
 const router = jsonServer.router("db.json");
 
-// response middleware
+//--- response middleware
+
+// emit conversation action
 router.render = (req, res) => {
   const path = req.path;
   const method = req.method;
 
+  // emit comversation socket event
   if (
     path.includes("/conversations") &&
     (method === "POST" || method === "PATCH")
   ) {
-    console.log(res.locals.data);
-    // emit socket event
     io.emit("conversation", {
+      data: res.locals.data,
+    });
+  }
+
+  // emit message socket event
+  if (path.includes("/messages") && method === "POST") {
+    // emit socket event
+    io.emit("message", {
       data: res.locals.data,
     });
   }

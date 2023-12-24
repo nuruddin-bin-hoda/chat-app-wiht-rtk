@@ -1,5 +1,6 @@
 import { apiSlice } from "../api/apiSlice";
 import { messagesApi } from "../messages/messagesApi";
+import io from "socket.io-client";
 
 export const conversationsApi = apiSlice.injectEndpoints({
   tagTypes: ["Conversation", "User"],
@@ -9,6 +10,45 @@ export const conversationsApi = apiSlice.injectEndpoints({
         `/conversations?participants_like=${email}&_sort=timestamp&_order=desc&_page=1&_limit=${
           import.meta.env.VITE_CONVERSATIONS_PER_PAGE
         }`,
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+      ) {
+        // create socket
+        const socket = io(import.meta.env.VITE_BASE_URL, {
+          reconnectionDelay: 1000,
+          reconnection: true,
+          reconnectionAttemps: 10,
+          transports: ["websocket"],
+          agent: false,
+          upgrade: false,
+          rejectUnauthorized: false,
+        });
+
+        try {
+          await cacheDataLoaded;
+
+          socket.on("conversation", (data) => {
+            updateCachedData((draft) => {
+              const conversation = draft.find((c) => c.id == data?.data?.id);
+
+              if (conversation?.id) {
+                conversation.message = data?.data?.message;
+                conversation.timestamp = data?.data?.timestamp;
+              } else {
+                const isMyConversation = data.data.users.find(
+                  (u) => u.email === arg
+                );
+
+                isMyConversation?.id && draft.push(data.data);
+              }
+            });
+          });
+        } catch (err) {}
+
+        await cacheEntryRemoved;
+        socket.close();
+      },
     }),
     getConversation: builder.query({
       query: ({ userEmail, participantsEmail }) =>
@@ -35,16 +75,16 @@ export const conversationsApi = apiSlice.injectEndpoints({
         try {
           const { data: resConversation } = await queryFulfilled;
 
-          // add conversation in cachs
-          dispatch(
-            apiSlice.util.updateQueryData(
-              "getConversations",
-              senderEmail,
-              (draft) => {
-                draft.push(resConversation);
-              }
-            )
-          );
+          // add conversation in cache
+          // dispatch(
+          //   apiSlice.util.updateQueryData(
+          //     "getConversations",
+          //     senderEmail,
+          //     (draft) => {
+          //       draft.push(resConversation);
+          //     }
+          //   )
+          // );
 
           // decide sender & receiver
           const sender = users.find((u) => u.email === senderEmail);
@@ -127,15 +167,15 @@ export const conversationsApi = apiSlice.injectEndpoints({
           );
 
           //--- pessimistic cachs updates
-          dispatch(
-            apiSlice.util.updateQueryData(
-              "getMessages",
-              resMessage.conversationId.toString(),
-              (draft) => {
-                draft.push(resMessage);
-              }
-            )
-          );
+          // dispatch(
+          //   apiSlice.util.updateQueryData(
+          //     "getMessages",
+          //     resMessage.conversationId.toString(),
+          //     (draft) => {
+          //       draft.push(resMessage);
+          //     }
+          //   )
+          // );
         } catch (err) {
           patchResult1.undo();
         }
