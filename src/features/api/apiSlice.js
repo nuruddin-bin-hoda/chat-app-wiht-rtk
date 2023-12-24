@@ -1,17 +1,29 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { userLoggedOut } from "../auth/authSlice";
+
+const baseQuery = fetchBaseQuery({
+  baseUrl: import.meta.env.VITE_BASE_URL,
+  prepareHeaders: async (headers, { getState, endpoints }) => {
+    const token = getState()?.auth?.accessToken;
+
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+
+    return headers;
+  },
+});
 
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_BASE_URL,
-    prepareHeaders: async (headers, { getState, endpoints }) => {
-      const token = getState()?.auth?.accessToken;
+  baseQuery: async (args, api, extraOptions) => {
+    const result = await baseQuery(args, api, extraOptions);
 
-      if (token) headers.set("Authorization", `Bearer ${token}`);
+    if (result?.error?.status === 401) {
+      api.dispatch(userLoggedOut());
+      localStorage.clear();
+    }
 
-      return headers;
-    },
-  }),
+    return result;
+  },
   tagTypes: [],
   endpoints: (builder) => ({}),
 });
